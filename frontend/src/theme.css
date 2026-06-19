@@ -1,0 +1,121 @@
+:root {
+  --ink: #14241b;
+  --paper: #f7f5ef;
+  --line: #d8d2c4;
+  --leaf: #2f6f4e;
+  --leaf-soft: #e3efe8;
+  --over: #b4533a;
+  --space: 1rem;
+  --radius: 4px;
+  font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  line-height: 1.5;
+}
+
+.shell {
+  max-width: 56rem;
+  margin: 0 auto;
+  padding: calc(var(--space) * 2) var(--space);
+}
+
+h1 {
+  font-size: 2rem;
+  margin: 0 0 0.25rem;
+  letter-spacing: -0.01em;
+}
+
+.eyebrow {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.72rem;
+  color: var(--leaf);
+}
+
+.panel {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: var(--space);
+  margin-top: var(--space);
+  background: #fff;
+}
+
+label {
+  display: block;
+  font-weight: 600;
+  margin: 0.75rem 0 0.25rem;
+}
+
+input,
+select {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  font: inherit;
+  background: var(--paper);
+}
+
+input:focus-visible,
+select:focus-visible,
+button:focus-visible,
+[role="checkbox"]:focus-visible {
+  outline: 3px solid var(--leaf);
+  outline-offset: 2px;
+}
+
+button {
+  font: inherit;
+  font-weight: 600;
+  padding: 0.6rem 1.1rem;
+  border: 1px solid var(--leaf);
+  background: var(--leaf);
+  color: #fff;
+  border-radius: var(--radius);
+  cursor: pointer;
+  margin-top: var(--space);
+}
+
+.action {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space);
+  padding: 0.6rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  margin-top: 0.5rem;
+  align-items: center;
+}
+
+.action[aria-pressed="true"] {
+  background: var(--leaf-soft);
+  border-color: var(--leaf);
+}
+
+.figure {
+  font-size: 2.5rem;
+  font-weight: 700;
+}
+
+.over {
+  color: var(--over);
+}
+
+.under {
+  color: var(--leaf);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .panel {
+    transition: border-color 120ms ease;
+  }
+}
