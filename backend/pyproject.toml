@@ -1,21 +1,30 @@
-[tool.pytest.ini_options]
-addopts = "--cov=app --cov-report=term-missing --cov-fail-under=90"
-testpaths = ["tests"]
-pythonpath = ["."]
-
-[tool.coverage.run]
-omit = ["app/insights/gemini.py"]
+[project]
+name = "carbon-counterfactual-api"
+version = "1.0.0"
+description = "Deterministic carbon what-if simulator with marginal-abatement action ranking."
+requires-python = ">=3.11"
 
 [tool.ruff]
-line-length = 100
+line-length = 110
 target-version = "py311"
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "N", "W", "UP", "B"]
-# B008: FastAPI uses callables (Depends/Header) as argument defaults by design.
-ignore = ["B008"]
+select = ["E", "F", "I", "N", "UP", "W", "B", "SIM"]
+# B008: FastAPI intentionally uses Depends()/Header() as default arguments.
+per-file-ignores = { "app/routes/*" = ["B008"] }
 
 [tool.mypy]
 python_version = "3.11"
 strict = true
 ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+addopts = "--cov=app --cov-report=term-missing --cov-fail-under=90 -q"
+testpaths = ["tests"]
+
+[tool.coverage.report]
+exclude_also = [
+    "\\.\\.\\.",
+    "if TYPE_CHECKING:",
+    "pragma: no cover",
+]

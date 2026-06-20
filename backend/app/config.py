@@ -1,7 +1,7 @@
 """Centralised, validated configuration via pydantic-settings.
 
-No secret literals live in the repo; everything is read from the environment
-(injected by Cloud Run / Secret Manager in production).
+Secrets are read from the environment (or Secret Manager in production) and never
+committed. See .env.example for the contract.
 """
 
 from __future__ import annotations
@@ -14,11 +14,10 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
-    app_name: str = "Carbon Counterfactual"
+    app_name: str = "Carbon Counterfactual API"
     cors_origins: str = "http://localhost:5173"
     gemini_api_key: str = ""
-    gemini_model: str = "gemini-2.5-flash"
-    use_gemini: bool = False
+    gemini_model: str = "gemini-2.0-flash"
 
     @property
     def cors_origin_list(self) -> list[str]:

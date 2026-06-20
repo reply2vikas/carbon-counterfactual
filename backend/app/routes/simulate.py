@@ -1,15 +1,21 @@
-"""What-if scenario projection."""
+"""What-if simulation + insight endpoints."""
 
 from __future__ import annotations
 
 from fastapi import APIRouter
 
-from app.carbon import simulator
-from app.models import ScenarioRequest, ScenarioResult
+from app.actions.simulator import simulate
+from app.insights import gemini
+from app.models import InsightRequest, InsightResponse, SimulationRequest, SimulationResult
 
-router = APIRouter()
+router = APIRouter(prefix="/api", tags=["simulate"])
 
 
-@router.post("/api/simulate", response_model=ScenarioResult)
-def simulate(req: ScenarioRequest) -> ScenarioResult:
-    return simulator.simulate(req.input, req.selected_actions)
+@router.post("/simulate", response_model=SimulationResult)
+def run_simulation(payload: SimulationRequest) -> SimulationResult:
+    return simulate(payload.baseline, payload.action_ids, payload.horizon_years)
+
+
+@router.post("/insights", response_model=InsightResponse)
+def insights(payload: InsightRequest) -> InsightResponse:
+    return gemini.generate(payload.baseline, payload.simulation)

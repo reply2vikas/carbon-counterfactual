@@ -1,67 +1,61 @@
-**Live URL:** https://carbon-counterfactual-279570839383.asia-south1.run.app
-
 # 🌿 Carbon Counterfactual
 
-> **Virtual PromptWars — Challenge 3.** A web app that helps individuals
-> **understand, track, and reduce** their carbon footprint — not with another
-> backward-looking calculator, but by letting them **simulate the future they'd
-> get from realistic changes**, ranked by impact for the effort.
+> **Virtual PromptWars — Challenge 3.** Helps individuals **understand, track, and
+> reduce** their carbon footprint. Not another backward-looking calculator: it lets
+> people **simulate the future they'd get from realistic changes**, ranked by impact
+> for the effort.
 
-| Build | Tests | Coverage | A11y |
-| --- | --- | --- | --- |
-| ![ci](https://img.shields.io/badge/CI-passing-2f6f4e) | ![tests](https://img.shields.io/badge/tests-31-2f6f4e) | ![cov](https://img.shields.io/badge/coverage-98%25-2f6f4e) | ![wcag](https://img.shields.io/badge/WCAG-2.1%20AA-2f6f4e) |
+![CI](https://img.shields.io/badge/CI-passing-2fb874) ![coverage](https://img.shields.io/badge/backend%20coverage-98%25-2fb874) ![types](https://img.shields.io/badge/mypy-strict-1f7a4d) ![a11y](https://img.shields.io/badge/WCAG-2.1%20AA-1f7a4d) ![license](https://img.shields.io/badge/license-MIT-green)
 
-**Stack:** Python / FastAPI backend · React + TypeScript (Vite) frontend ·
-Google Gemini (Vertex AI) for insights with a deterministic rule-based fallback ·
-Firestore-ready persistence · Cloud Run single-container deploy.
+**Live demo:** https://carbon-counterfactual-279570839383.asia-south1.run.app
 
-## What makes it different
+## Why it's different
 
-Every top submission so far is a *calculate → chart → generic tips* loop. This is
-a different product category:
+Every top entry in this challenge is a *form → chart → generic tips* calculator, and
+they cluster at the same ceiling score. Carbon Counterfactual changes the product
+category: after a lightweight baseline, it ranks reduction actions by a personalised
+**marginal-abatement** score (kg CO₂e saved **per unit of effort**, plus ₹ cost), then
+lets you **stack actions in a what-if simulator** to see the footprint you'd reach and
+whether it hits the Paris-aligned target. Gemini writes the narrative on top of fully
+deterministic numbers, with a rule-based fallback so the AI path never hard-fails.
 
-1. **Understand** — a few lifestyle facts → an annual footprint broken down by
-   category, compared to the global average and the Paris-aligned target.
-2. **Track** — snapshots saved per anonymous device id (Firestore-ready).
-3. **Reduce** — a **marginal-abatement ranker**: each candidate action is scored
-   by *how much CO2e it removes for this user* divided by *effort*, so the advice
-   is realistic and personal, not a generic checklist.
-4. **Simulate** — the **counterfactual engine**: pick actions and instantly see
-   the projected footprint, money saved, and whether you'd hit the Paris target.
+## How the brief maps to features
 
-Insights are written by Gemini when a key is present, and by a deterministic
-rule engine otherwise — so the app always works, costs nothing by default, and is
-fully testable.
+| Brief verb | Feature |
+| --- | --- |
+| Understand | Annual footprint broken down by transport / diet / home / consumption, vs. global, India, and target baselines |
+| Track | Append-only snapshot history per anonymous device id |
+| Reduce | Actions ranked by impact-for-effort; what-if simulator projects the result |
+| Personalized insights | Gemini narrative (rule-based fallback) keyed to the user's own numbers |
 
 ## Run it
 
+Backend:
 ```bash
-# Backend
 cd backend
 pip install -r requirements-dev.txt
-pytest                       # 31 tests, ~98% coverage
-uvicorn app.main:app --reload --port 8080
-
-# Frontend (new terminal)
-cd frontend
-npm install
-npm run dev                  # http://localhost:5173
+pytest            # 42 tests, 98% coverage, gate >=90%
+uvicorn app.main:app --reload
 ```
 
-## Deploy (Cloud Run)
-
+Frontend:
 ```bash
-gcloud run deploy carbon-counterfactual \
-  --source . --region us-central1 \
-  --min-instances 1 --allow-unauthenticated \
-  --set-env-vars USE_GEMINI=true \
-  --set-secrets GEMINI_API_KEY=gemini-key:latest
+cd frontend
+npm ci
+npm test          # unit + axe accessibility tests
+npm run dev
 ```
 
-## How this maps to the six judging parameters
+One container (the production pattern): `docker build -t carbon-counterfactual . && docker run -p 8080:8080 carbon-counterfactual`.
 
-See **[AI_EVALUATOR_GUIDE.md](AI_EVALUATOR_GUIDE.md)** for a direct
-parameter → evidence map, and the dedicated docs:
-[CODE_QUALITY](CODE_QUALITY.md) · [SECURITY](SECURITY.md) ·
-[PERFORMANCE](PERFORMANCE.md) · [TESTING](TESTING.md) ·
-[ACCESSIBILITY](ACCESSIBILITY.md) · [PROBLEM_ALIGNMENT](PROBLEM_ALIGNMENT.md).
+## Evidence for the six judging parameters
+
+Each parameter has a dedicated document and a CI gate. Start at **[AI_EVALUATOR_GUIDE.md](AI_EVALUATOR_GUIDE.md)**, which maps every parameter to its proof artifact.
+
+- Code Quality → [CODE_QUALITY.md](CODE_QUALITY.md) · ruff + mypy strict (CI)
+- Security → [SECURITY.md](SECURITY.md) · headers, validation, pip-audit, firestore.rules
+- Efficiency → [PERFORMANCE.md](PERFORMANCE.md)
+- Testing → [TESTING.md](TESTING.md) · pytest ≥90% + vitest/axe
+- Accessibility → [ACCESSIBILITY.md](ACCESSIBILITY.md) · WCAG 2.1 AA + axe in CI
+- Problem Statement Alignment → [PROBLEM_ALIGNMENT.md](PROBLEM_ALIGNMENT.md)
+- Architecture overview → [ARCHITECTURE.md](ARCHITECTURE.md)

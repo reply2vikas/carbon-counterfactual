@@ -1,5 +1,5 @@
-import "@testing-library/jest-dom";
-import * as axeMatchers from "vitest-axe/matchers";
+import "@testing-library/jest-dom/vitest";
+import * as matchers from "vitest-axe/matchers";
 import { expect } from "vitest";
 
-expect.extend(axeMatchers);
+expect.extend(matchers);

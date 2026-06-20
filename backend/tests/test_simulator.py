@@ -1,38 +1,47 @@
 from __future__ import annotations
 
-from app.carbon import calculator, simulator
+from app.actions.simulator import simulate
+from app.carbon.calculator import compute_footprint
 from app.models import CarbonInput
 
 
-def test_no_actions_leaves_baseline_unchanged(heavy_baseline: CarbonInput) -> None:
-    res = simulator.simulate(heavy_baseline, [])
-    assert res.projected_kg == res.baseline_kg
-    assert res.annual_saving_kg == 0.0
+def test_no_actions_means_no_reduction(heavy_baseline: CarbonInput) -> None:
+    res = simulate(heavy_baseline, [], 1)
+    assert res.reduction_kg == 0.0
+    assert res.projected_total_kg == res.baseline_total_kg
 
 
-def test_applying_action_reduces_footprint(heavy_baseline: CarbonInput) -> None:
-    res = simulator.simulate(heavy_baseline, ["diet_vegetarian"])
-    assert res.projected_kg < res.baseline_kg
-    assert res.annual_saving_kg > 0
+def test_actions_reduce_total(heavy_baseline: CarbonInput) -> None:
+    res = simulate(heavy_baseline, ["diet_step", "led_lighting"], 1)
+    assert res.projected_total_kg < res.baseline_total_kg
+    assert res.reduction_kg > 0
+    assert len(res.applied) == 2
 
 
-def test_unknown_action_keys_are_ignored(heavy_baseline: CarbonInput) -> None:
-    res = simulator.simulate(heavy_baseline, ["does_not_exist"])
-    assert res.projected_kg == res.baseline_kg
+def test_category_savings_capped_at_baseline(heavy_baseline: CarbonInput) -> None:
+    # Stack every home action; combined saving cannot exceed the home baseline.
+    res = simulate(heavy_baseline, ["led_lighting", "ac_setpoint", "rooftop_solar"], 1)
+    home_base = compute_footprint(heavy_baseline).breakdown.home
+    home_saved = sum(a.annual_savings_kg for a in res.applied if a.category == "home")
+    assert home_saved <= home_base + 0.1
 
 
-def test_projection_never_negative(light_baseline: CarbonInput) -> None:
-    res = simulator.simulate(light_baseline, ["electricity_10"])
-    assert res.projected_kg >= 0.0
+def test_unknown_and_duplicate_ids_ignored(heavy_baseline: CarbonInput) -> None:
+    res = simulate(heavy_baseline, ["diet_step", "diet_step", "nope"], 1)
+    assert len(res.applied) == 1
 
 
-def test_cost_delta_aggregates(heavy_baseline: CarbonInput) -> None:
-    res = simulator.simulate(heavy_baseline, ["commute_metro", "electricity_10"])
-    assert res.annual_cost_delta == sum(a.annual_cost_delta for a in res.applied_actions)
+def test_horizon_multiplies_cumulative(heavy_baseline: CarbonInput) -> None:
+    one = simulate(heavy_baseline, ["diet_step"], 1)
+    five = simulate(heavy_baseline, ["diet_step"], 5)
+    assert round(five.cumulative_savings_kg, 1) == round(one.cumulative_savings_kg * 5, 1)
 
 
-def test_paris_flag(heavy_baseline: CarbonInput) -> None:
-    baseline = calculator.calculate(heavy_baseline)
-    assert baseline.total_kg > 2000  # sanity: heavy lifestyle is over target
-    res = simulator.simulate(heavy_baseline, [])
-    assert res.meets_paris_target is False
+def test_meets_target_for_light_profile(light_baseline: CarbonInput) -> None:
+    res = simulate(light_baseline, [], 1)
+    assert res.meets_target is True
+
+
+def test_money_delta_accumulates(heavy_baseline: CarbonInput) -> None:
+    res = simulate(heavy_baseline, ["led_lighting", "car_to_ev"], 1)
+    assert res.money_delta_inr_year == -1500 + 25000

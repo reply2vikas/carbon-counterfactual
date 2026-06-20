@@ -1,8 +1,8 @@
 """Pure-function carbon calculator.
 
 Takes a validated lifestyle baseline and returns an annual footprint broken down
-by category. No I/O, no globals beyond the factor tables — which makes every path
-here trivially unit-testable to 100%.
+by category. No I/O and no mutable globals beyond the factor tables, which makes
+every branch here trivially unit-testable to 100%.
 """
 
 from __future__ import annotations
@@ -11,56 +11,51 @@ from app.carbon import factors as f
 from app.models import Breakdown, CarbonInput, FootprintResult
 
 
-def _transport_annual(data: CarbonInput) -> float:
-    per_km = f.TRANSPORT_KG_PER_KM.get(data.transport_mode, 0.0)
-    weekly = per_km * data.weekly_km
-    return weekly * f.WEEKS_PER_YEAR
+def transport_annual(data: CarbonInput) -> float:
+    """Annual transport kg CO2e from weekly distances plus flights."""
+    car = data.car_km_week * f.TRANSPORT_FACTORS[data.car_fuel]
+    bus = data.bus_km_week * f.TRANSPORT_FACTORS["bus"]
+    rail = data.rail_km_week * f.TRANSPORT_FACTORS["rail"]
+    bike = data.motorbike_km_week * f.TRANSPORT_FACTORS["motorbike"]
+    weekly = car + bus + rail + bike
+    flights = data.flight_hours_year * f.FLIGHT_FACTOR_PER_HOUR
+    return weekly * f.WEEKS_PER_YEAR + flights
 
 
-def _diet_annual(data: CarbonInput) -> float:
-    per_day = f.DIET_KG_PER_DAY.get(data.diet, 0.0)
-    return per_day * f.DAYS_PER_YEAR
+def diet_annual(data: CarbonInput) -> float:
+    return f.DIET_FACTORS[data.diet]
 
 
-def _home_annual(data: CarbonInput) -> float:
-    electricity = data.monthly_kwh * 12 * f.ELECTRICITY_KG_PER_KWH
-    lpg = data.monthly_lpg_kg * 12 * f.LPG_KG_PER_KG
+def home_annual(data: CarbonInput) -> float:
+    electricity = data.electricity_kwh_month * f.MONTHS_PER_YEAR * f.GRID_FACTOR_PER_KWH
+    lpg = data.lpg_cylinders_month * f.MONTHS_PER_YEAR * f.LPG_FACTOR_PER_CYLINDER
     return electricity + lpg
 
 
-def _flights_annual(data: CarbonInput) -> float:
-    return data.annual_flight_hours * f.FLIGHT_KG_PER_HOUR
+def consumption_annual(data: CarbonInput) -> float:
+    annual_inr = data.shopping_inr_month * f.MONTHS_PER_YEAR
+    return (annual_inr / 1000.0) * f.CONSUMPTION_FACTOR_PER_1000_INR
 
 
-def calculate(data: CarbonInput) -> FootprintResult:
-    """Compute the annual footprint and a per-category breakdown."""
-    transport = round(_transport_annual(data), 2)
-    diet = round(_diet_annual(data), 2)
-    home = round(_home_annual(data), 2)
-    flights = round(_flights_annual(data), 2)
-    total = round(transport + diet + home + flights, 2)
-
-    breakdown = Breakdown(
-        transport=transport,
-        diet=diet,
-        home=home,
-        flights=flights,
+def compute_breakdown(data: CarbonInput) -> Breakdown:
+    return Breakdown(
+        transport=round(transport_annual(data), 1),
+        diet=round(diet_annual(data), 1),
+        home=round(home_annual(data), 1),
+        consumption=round(consumption_annual(data), 1),
     )
+
+
+def compute_footprint(data: CarbonInput) -> FootprintResult:
+    breakdown = compute_breakdown(data)
+    total = breakdown.transport + breakdown.diet + breakdown.home + breakdown.consumption
+    target = f.PARIS_ALIGNED_TARGET_KG
+    vs_target = ((total - target) / target) * 100.0 if target else 0.0
     return FootprintResult(
-        total_kg=total,
+        total_kg=round(total, 1),
         breakdown=breakdown,
-        vs_global_avg=round(total / f.GLOBAL_AVG_ANNUAL, 3),
-        vs_paris_target=round(total / f.PARIS_ALIGNED_TARGET, 3),
+        global_average_kg=f.GLOBAL_AVERAGE_KG,
+        india_average_kg=f.INDIA_AVERAGE_KG,
+        target_kg=target,
+        vs_target_pct=round(vs_target, 1),
     )
-
-
-def largest_category(result: FootprintResult) -> str:
-    """Return the name of the category contributing the most emissions."""
-    b = result.breakdown
-    categories = {
-        "transport": b.transport,
-        "diet": b.diet,
-        "home": b.home,
-        "flights": b.flights,
-    }
-    return max(categories, key=lambda k: categories[k])

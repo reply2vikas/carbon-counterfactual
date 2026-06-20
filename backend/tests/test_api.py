@@ -15,46 +15,49 @@ def test_security_headers_present(client: TestClient) -> None:
     assert r.headers["X-Frame-Options"] == "DENY"
 
 
-def test_footprint_endpoint(client: TestClient) -> None:
-    payload = {
-        "transport_mode": "car_petrol",
-        "weekly_km": 200,
-        "diet": "heavy_meat",
-        "monthly_kwh": 300,
-        "monthly_lpg_kg": 10,
-        "annual_flight_hours": 10,
-    }
-    r = client.post("/api/footprint", json=payload)
+def test_calculate_and_history_roundtrip(client: TestClient) -> None:
+    payload = {"car_km_week": 200, "diet": "meat_heavy", "electricity_kwh_month": 300}
+    r = client.post("/api/calculate", json=payload, headers={"X-Device-Id": "dev1"})
+    assert r.status_code == 200
+    total = r.json()["total_kg"]
+    assert total > 0
+
+    h = client.get("/api/history", headers={"X-Device-Id": "dev1"})
+    assert h.status_code == 200
+    assert len(h.json()) == 1
+    assert h.json()[0]["total_kg"] == total
+
+
+def test_actions_endpoint_ranked(client: TestClient) -> None:
+    payload = {"car_km_week": 300, "diet": "meat_heavy", "electricity_kwh_month": 400}
+    r = client.post("/api/actions", json=payload)
     assert r.status_code == 200
     body = r.json()
-    assert body["result"]["total_kg"] > 0
-    assert len(body["ranked_actions"]) > 0
-    assert isinstance(body["insight"], str)
-
-
-def test_footprint_rejects_bad_input(client: TestClient) -> None:
-    r = client.post("/api/footprint", json={"weekly_km": -5})
-    assert r.status_code == 422
-
-
-def test_footprint_rejects_unknown_field(client: TestClient) -> None:
-    r = client.post("/api/footprint", json={"hacker_field": 1})
-    assert r.status_code == 422
+    assert len(body) > 0
+    vals = [a["abatement_per_effort"] for a in body]
+    assert vals == sorted(vals, reverse=True)
 
 
 def test_simulate_endpoint(client: TestClient) -> None:
     payload = {
-        "input": {
-            "transport_mode": "car_petrol",
-            "weekly_km": 200,
-            "diet": "heavy_meat",
-            "monthly_kwh": 300,
-            "monthly_lpg_kg": 10,
-            "annual_flight_hours": 10,
-        },
-        "selected_actions": ["diet_vegetarian", "commute_metro"],
+        "baseline": {"car_km_week": 300, "diet": "meat_heavy", "electricity_kwh_month": 400},
+        "action_ids": ["diet_step", "led_lighting"],
+        "horizon_years": 5,
     }
     r = client.post("/api/simulate", json=payload)
     assert r.status_code == 200
     body = r.json()
-    assert body["projected_kg"] < body["baseline_kg"]
+    assert body["projected_total_kg"] < body["baseline_total_kg"]
+    assert body["cumulative_savings_kg"] == round(body["reduction_kg"] * 5, 1)
+
+
+def test_insights_endpoint_fallback(client: TestClient) -> None:
+    payload = {"baseline": {"car_km_week": 300, "diet": "meat_heavy"}}
+    r = client.post("/api/insights", json=payload)
+    assert r.status_code == 200
+    assert r.json()["source"] == "rules"
+
+
+def test_calculate_rejects_bad_input(client: TestClient) -> None:
+    r = client.post("/api/calculate", json={"car_km_week": -5})
+    assert r.status_code == 422

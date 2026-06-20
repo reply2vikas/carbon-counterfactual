@@ -1,74 +1,54 @@
 import { useState } from "react";
-import "./theme.css";
-import { ActionRanker } from "./components/ActionRanker";
-import { BaselineForm } from "./components/BaselineForm";
-import { InsightsPanel } from "./components/InsightsPanel";
-import { ScenarioSimulator } from "./components/ScenarioSimulator";
-import { getFootprint, simulate } from "./lib/api";
-import type { CarbonInput, FootprintResponse, ScenarioResult } from "./lib/types";
+import { ActionList } from "./components/ActionList";
+import { CalculatorForm } from "./components/CalculatorForm";
+import { ResultPanel } from "./components/ResultPanel";
+import { SimulationPanel } from "./components/SimulationPanel";
+import * as api from "./lib/api";
+import { DEFAULT_INPUT } from "./lib/types";
+import type { ActionView, CarbonInput, FootprintResult, SimulationResult } from "./lib/types";
 
 export default function App() {
-  const [data, setData] = useState<FootprintResponse | null>(null);
-  const [input, setInput] = useState<CarbonInput | null>(null);
+  const [input, setInput] = useState<CarbonInput>(DEFAULT_INPUT);
+  const [result, setResult] = useState<FootprintResult | null>(null);
+  const [actions, setActions] = useState<ActionView[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [scenario, setScenario] = useState<ScenarioResult | null>(null);
-  const [busy, setBusy] = useState(false);
+  const [sim, setSim] = useState<SimulationResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  async function handleSubmit(form: CarbonInput) {
-    setBusy(true);
-    setError(null);
+  async function onCalculate() {
     try {
-      const res = await getFootprint(form);
-      setData(res);
-      setInput(form);
+      setError(null);
+      const [fp, acts] = await Promise.all([api.calculate(input), api.rankActions(input)]);
+      setResult(fp);
+      setActions(acts);
       setSelected(new Set());
-      setScenario(null);
-    } catch {
-      setError("Could not reach the calculator. Check the API is running and try again.");
-    } finally {
-      setBusy(false);
+      setSim(null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Something went wrong");
     }
   }
 
-  async function toggle(key: string) {
-    if (!input) return;
+  async function onToggle(id: string) {
     const next = new Set(selected);
-    next.has(key) ? next.delete(key) : next.add(key);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
     setSelected(next);
     try {
-      setScenario(await simulate(input, [...next]));
-    } catch {
-      setError("Could not run the projection. Try again.");
+      setSim(await api.simulate(input, [...next], 5));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Simulation failed");
     }
   }
 
   return (
-    <main className="shell">
-      <header>
-        <p className="eyebrow">Carbon Counterfactual</p>
-        <h1>See the footprint you could have.</h1>
-        <p>
-          Estimate where your emissions come from, then simulate the future you would get
-          from realistic changes — ranked by impact for the effort.
-        </p>
-      </header>
-
-      <BaselineForm onSubmit={handleSubmit} busy={busy} />
-
-      {error && (
-        <p className="panel over" role="alert">
-          {error}
-        </p>
-      )}
-
-      {data && (
-        <>
-          <InsightsPanel result={data.result} insight={data.insight} />
-          <ActionRanker actions={data.ranked_actions} selected={selected} onToggle={toggle} />
-          <ScenarioSimulator scenario={scenario} />
-        </>
-      )}
+    <main className="app">
+      <h1>Carbon Counterfactual</h1>
+      <p className="tagline">Model your footprint, then simulate the future you could choose.</p>
+      <CalculatorForm value={input} onChange={setInput} onSubmit={onCalculate} />
+      {error && <p role="alert" className="miss">{error}</p>}
+      {result && <ResultPanel result={result} />}
+      {actions.length > 0 && <ActionList actions={actions} selected={selected} onToggle={onToggle} />}
+      {sim && <SimulationPanel sim={sim} />}
     </main>
   );
 }

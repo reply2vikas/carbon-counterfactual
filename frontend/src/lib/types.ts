@@ -1,63 +1,43 @@
 export type TransportMode =
-  | "car_petrol"
-  | "car_diesel"
-  | "car_ev"
-  | "bus"
-  | "metro"
-  | "motorbike"
-  | "walk_cycle";
-
-export type Diet =
-  | "heavy_meat"
-  | "medium_meat"
-  | "low_meat"
-  | "pescatarian"
-  | "vegetarian"
-  | "vegan";
+  | "car_petrol" | "car_diesel" | "car_ev" | "bus" | "rail" | "motorbike";
+export type Diet = "meat_heavy" | "meat_medium" | "pescatarian" | "vegetarian" | "vegan";
+export type Category = "transport" | "diet" | "home" | "consumption";
 
 export interface CarbonInput {
-  transport_mode: TransportMode;
-  weekly_km: number;
+  car_km_week: number;
+  car_fuel: TransportMode;
+  bus_km_week: number;
+  rail_km_week: number;
+  motorbike_km_week: number;
+  flight_hours_year: number;
   diet: Diet;
-  monthly_kwh: number;
-  monthly_lpg_kg: number;
-  annual_flight_hours: number;
+  electricity_kwh_month: number;
+  lpg_cylinders_month: number;
+  shopping_inr_month: number;
 }
 
 export interface Breakdown {
-  transport: number;
-  diet: number;
-  home: number;
-  flights: number;
+  transport: number; diet: number; home: number; consumption: number;
 }
-
 export interface FootprintResult {
-  total_kg: number;
-  breakdown: Breakdown;
-  vs_global_avg: number;
-  vs_paris_target: number;
+  total_kg: number; breakdown: Breakdown;
+  global_average_kg: number; india_average_kg: number;
+  target_kg: number; vs_target_pct: number;
+}
+export interface ActionView {
+  id: string; label: string; category: Category;
+  annual_savings_kg: number; effort: number;
+  cost_inr_year: number; abatement_per_effort: number; cost_per_kg: number | null;
+}
+export interface SimulationResult {
+  baseline_total_kg: number; projected_total_kg: number;
+  reduction_kg: number; reduction_pct: number; meets_target: boolean;
+  cumulative_savings_kg: number; money_delta_inr_year: number;
+  applied: { id: string; label: string; category: Category; annual_savings_kg: number }[];
 }
 
-export interface ActionImpact {
-  key: string;
-  label: string;
-  annual_saving_kg: number;
-  effort: number;
-  annual_cost_delta: number;
-  saving_per_effort: number;
-}
-
-export interface FootprintResponse {
-  result: FootprintResult;
-  ranked_actions: ActionImpact[];
-  insight: string;
-}
-
-export interface ScenarioResult {
-  baseline_kg: number;
-  projected_kg: number;
-  annual_saving_kg: number;
-  annual_cost_delta: number;
-  meets_paris_target: boolean;
-  applied_actions: ActionImpact[];
-}
+export const DEFAULT_INPUT: CarbonInput = {
+  car_km_week: 150, car_fuel: "car_petrol", bus_km_week: 0, rail_km_week: 30,
+  motorbike_km_week: 0, flight_hours_year: 6, diet: "meat_medium",
+  electricity_kwh_month: 250, lpg_cylinders_month: 1, shopping_inr_month: 8000,
+};

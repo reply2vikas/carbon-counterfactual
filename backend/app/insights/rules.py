@@ -1,50 +1,43 @@
 """Deterministic, rule-based insight generator.
 
-This is the always-on fallback (and the default). It produces a personalized,
-quantified narrative with zero external calls — so the product works offline,
-costs nothing, and is fully testable. Gemini, when enabled, only enriches this.
+This is the always-available fallback used when Gemini is not configured or fails.
+Because it is pure and deterministic it is fully unit-testable, and it guarantees
+the product still gives personalised advice with zero external dependencies.
 """
 
 from __future__ import annotations
 
-from app.carbon import calculator
-from app.models import ActionImpact, CarbonInput, FootprintResult
+from app.actions.ranker import rank_actions
+from app.carbon.calculator import compute_footprint
+from app.models import CarbonInput, InsightResponse, SimulationResult
 
 
-def _phrase_for_category(name: str) -> str:
-    return {
-        "transport": "how you get around",
-        "diet": "what you eat",
-        "home": "your home energy use",
-        "flights": "your flying",
-    }.get(name, name)
+def generate(baseline: CarbonInput, simulation: SimulationResult | None) -> InsightResponse:
+    footprint = compute_footprint(baseline)
+    bd = footprint.breakdown
+    categories = {"transport": bd.transport, "diet": bd.diet, "home": bd.home, "consumption": bd.consumption}
+    biggest = max(categories, key=lambda k: categories[k])
 
-
-def build_insight(data: CarbonInput, result: FootprintResult, actions: list[ActionImpact]) -> str:
-    biggest = calculator.largest_category(result)
-    parts: list[str] = []
-
-    if result.vs_paris_target <= 1.0:
-        parts.append(
-            f"Your estimated footprint is {result.total_kg:,.0f} kg CO2e a year — "
-            "already at or below the Paris-aligned target. Strong position."
+    over = footprint.total_kg - footprint.target_kg
+    if over > 0:
+        headline = (
+            f"Your footprint is about {footprint.total_kg:.0f} kg CO2e/year, "
+            f"{over:.0f} kg above the Paris-aligned target. Your largest source is {biggest}."
         )
     else:
-        over = result.total_kg - 2_000.0
-        parts.append(
-            f"Your estimated footprint is {result.total_kg:,.0f} kg CO2e a year, "
-            f"about {over:,.0f} kg above the Paris-aligned target."
+        headline = (
+            f"Your footprint is about {footprint.total_kg:.0f} kg CO2e/year, "
+            f"already at or below the Paris-aligned target. Nice."
         )
 
-    parts.append(
-        f"The largest driver is {_phrase_for_category(biggest)}, so that is where "
-        "a change pays off most."
-    )
-
-    if actions:
-        top = actions[0]
-        parts.append(
-            f"Highest-leverage move: {top.label.lower()} — about "
-            f"{top.annual_saving_kg:,.0f} kg CO2e saved a year for relatively low effort."
+    ranked = rank_actions(baseline)
+    tips = [f"{v.label}: saves ~{v.annual_savings_kg:.0f} kg/year (effort {v.effort}/5)" for v in ranked[:3]]
+    if simulation is not None and simulation.applied:
+        tips.append(
+            f"Your selected actions cut ~{simulation.reduction_pct:.0f}% "
+            f"({simulation.reduction_kg:.0f} kg/year)."
         )
-    return " ".join(parts)
+    if not tips:
+        tips = ["No high-impact actions found for this profile — you're already lean."]
+
+    return InsightResponse(headline=headline, actions=tips, source="rules")

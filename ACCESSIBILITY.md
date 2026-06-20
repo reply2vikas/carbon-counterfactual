@@ -1,22 +1,19 @@
 # Accessibility — WCAG 2.1 AA
 
-**Tools:** `eslint-plugin-jsx-a11y` (lint-time), `vitest-axe` (test-time),
-manual keyboard pass.
+## Automated
+- **axe-core** via `vitest-axe`: `src/App.test.tsx` asserts `toHaveNoViolations()`.
+- **eslint-plugin-jsx-a11y** (`recommended`) runs in CI with `--max-warnings 0`.
 
-## Measures
-- **Semantic structure**: `main`, `header`, `section` with `aria-labelledby`,
-  one `h1`, ordered headings.
-- **Labelled controls**: every input/select has an associated `<label htmlFor>`.
-- **Live results**: footprint and scenario panels use `aria-live="polite"` so
-  screen readers announce updated numbers.
-- **Selectable actions**: implemented as `role="checkbox"` with `aria-checked`,
-  keyboard-operable.
-- **Errors**: surfaced via `role="alert"`.
-- **Visible focus**: a 3px focus ring on every interactive element.
-- **Contrast**: ink `#14241b` on paper `#f7f5ef` and white exceeds 4.5:1.
-- **Reduced motion**: transitions only apply under
-  `prefers-reduced-motion: no-preference`.
+## Built in by construction
+- Semantic landmarks: `main`, `section` with `aria-labelledby` headings.
+- All inputs have associated `<label>`s; the action checkboxes sit in a `fieldset`
+  with a `legend` (visually-hidden `.sr-only`).
+- Live regions: results and the simulation panel use `aria-live="polite"`; errors use
+  `role="alert"`.
+- Visible keyboard focus on every interactive element (`:focus-visible` 3px outline).
+- `prefers-reduced-motion` respected — transitions are gated behind the media query.
+- Colour palette chosen for ≥4.5:1 text contrast.
 
-## Verification
-`App.test.tsx` and `ActionRanker.test.tsx` assert `toHaveNoViolations()`. The
-jsx-a11y ruleset runs as part of `npm run lint` in CI.
+## Before submission
+Run an axe browser scan + a manual keyboard pass on the live URL and note "0 critical
+violations" here with a screenshot.

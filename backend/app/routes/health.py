@@ -1,10 +1,10 @@
-"""Liveness endpoint."""
+"""Liveness probe — no I/O so it stays sub-millisecond on Cloud Run."""
 
 from __future__ import annotations
 
 from fastapi import APIRouter
 
-router = APIRouter()
+router = APIRouter(tags=["health"])
 
 
 @router.get("/api/health")

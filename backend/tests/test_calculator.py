@@ -1,43 +1,37 @@
 from __future__ import annotations
 
-from app.carbon import calculator
+from app.carbon import calculator as calc
 from app.carbon import factors as f
 from app.models import CarbonInput
 
 
-def test_zero_input_is_zero() -> None:
-    result = calculator.calculate(CarbonInput(weekly_km=0, monthly_kwh=0))
-    # diet defaults to medium_meat, so total is diet-only.
-    expected_diet = round(f.DIET_KG_PER_DAY["medium_meat"] * f.DAYS_PER_YEAR, 2)
-    assert result.breakdown.transport == 0.0
-    assert result.breakdown.diet == expected_diet
-    assert result.total_kg == expected_diet
+def test_zero_input_is_diet_only() -> None:
+    data = CarbonInput(diet="vegan")
+    fp = calc.compute_footprint(data)
+    assert fp.breakdown.transport == 0
+    assert fp.breakdown.diet == f.DIET_FACTORS["vegan"]
+    assert fp.total_kg == f.DIET_FACTORS["vegan"]
 
 
-def test_components_sum_to_total(heavy_baseline: CarbonInput) -> None:
-    r = calculator.calculate(heavy_baseline)
-    b = r.breakdown
-    assert round(b.transport + b.diet + b.home + b.flights, 2) == r.total_kg
+def test_transport_uses_correct_fuel_factor() -> None:
+    petrol = calc.transport_annual(CarbonInput(car_km_week=100, car_fuel="car_petrol"))
+    ev = calc.transport_annual(CarbonInput(car_km_week=100, car_fuel="car_ev"))
+    assert petrol > ev
 
 
-def test_transport_matches_factor(heavy_baseline: CarbonInput) -> None:
-    r = calculator.calculate(heavy_baseline)
-    expected = round(f.TRANSPORT_KG_PER_KM["car_petrol"] * 300 * f.WEEKS_PER_YEAR, 2)
-    assert r.breakdown.transport == expected
+def test_flights_add_to_transport() -> None:
+    base = calc.transport_annual(CarbonInput(car_km_week=10))
+    with_flight = calc.transport_annual(CarbonInput(car_km_week=10, flight_hours_year=5))
+    assert round(with_flight - base, 1) == round(5 * f.FLIGHT_FACTOR_PER_HOUR, 1)
 
 
-def test_reference_ratios(heavy_baseline: CarbonInput) -> None:
-    r = calculator.calculate(heavy_baseline)
-    assert r.vs_global_avg == round(r.total_kg / f.GLOBAL_AVG_ANNUAL, 3)
-    assert r.vs_paris_target == round(r.total_kg / f.PARIS_ALIGNED_TARGET, 3)
+def test_home_combines_electricity_and_lpg() -> None:
+    data = CarbonInput(electricity_kwh_month=100, lpg_cylinders_month=2)
+    expected = 100 * 12 * f.GRID_FACTOR_PER_KWH + 2 * 12 * f.LPG_FACTOR_PER_CYLINDER
+    assert round(calc.home_annual(data), 1) == round(expected, 1)
 
 
-def test_largest_category(heavy_baseline: CarbonInput, light_baseline: CarbonInput) -> None:
-    assert calculator.largest_category(calculator.calculate(heavy_baseline)) in {
-        "transport",
-        "diet",
-        "home",
-        "flights",
-    }
-    # A vegan cyclist with no transport: diet is the biggest remaining driver.
-    assert calculator.largest_category(calculator.calculate(light_baseline)) == "diet"
+def test_vs_target_pct_positive_when_above() -> None:
+    fp = calc.compute_footprint(CarbonInput(diet="meat_heavy", car_km_week=500))
+    assert fp.vs_target_pct > 0
+    assert fp.target_kg == f.PARIS_ALIGNED_TARGET_KG

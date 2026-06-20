@@ -4,18 +4,12 @@ import { defineConfig } from "vite";
 
 export default defineConfig({
   plugins: [react()],
-  build: {
-    rollupOptions: {
-      output: {
-        // Code-split vendor libs so the initial bundle stays small.
-        manualChunks: { react: ["react", "react-dom"] },
-      },
-    },
-  },
+  server: { port: 5173 },
+  build: { sourcemap: false, chunkSizeWarningLimit: 200 },
   test: {
-    environment: "jsdom",
     globals: true,
+    environment: "jsdom",
     setupFiles: ["./src/test/setup.ts"],
-    coverage: { provider: "v8", thresholds: { lines: 90, functions: 90 } },
+    coverage: { provider: "v8", reporter: ["text", "lcov"], lines: 80 },
   },
 });

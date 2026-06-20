@@ -1,21 +1,23 @@
 # Architecture
 
-Layered, dependency-inverted, and deliberately thin at the edges.
-
 ```
-React/TS (Vite)  ──HTTP──►  FastAPI routes  ──►  carbon/ (pure engine)
-                                            └──►  insights/ (Gemini + rules)
-                                            └──►  repository/ (Protocol)
-                                                     └─ memory (default)
-                                                     └─ firestore (prod-ready)
+┌──────────── Frontend (React + TS, Vite) ───────────┐
+│ CalculatorForm → ResultPanel → ActionList → Sim     │
+│ lib/api.ts (typed fetch client)                     │
+└───────────────────────┬─────────────────────────────┘
+                        │ JSON over HTTP (same-origin in prod)
+┌───────────────────────▼───────────── Backend (FastAPI) ┐
+│ routes/      thin HTTP layer (+ CORS, security headers) │
+│ carbon/      pure calculator + factor tables            │
+│ actions/     catalog · marginal-abatement ranker · sim  │
+│ insights/    Gemini client → rule-based fallback        │
+│ repository/  Protocol; in-memory (dev) / Firestore (prod)│
+└──────────────────────────────────────────────────────────┘
+        deployed as ONE container on Cloud Run
+        (SPA served same-origin by FastAPI StaticFiles)
 ```
 
-- **routes/** — HTTP only; no business logic.
-- **carbon/** — `factors`, `calculator`, `actions` (marginal-abatement ranker),
-  `simulator` (what-if engine). Pure functions, no I/O — the testable core.
-- **insights/** — `gemini` enriches, `rules` guarantees a deterministic fallback.
-- **repository/** — a `Protocol` so storage is swappable (in-memory ↔ Firestore)
-  without touching the routes.
-
-This separation is why coverage is high and why the simulator can be exercised
-exhaustively without mocks.
+**Design rules.** Dependencies point inward; the domain core is pure and side-effect
+free; storage and the LLM are pluggable behind seams (`repository.base.EntryRepository`,
+`insights.gemini` → `insights.rules`). This is what keeps the core 100%-testable and
+lets the AI path degrade gracefully.
