@@ -1,7 +1,7 @@
-// CalculatorForm — accessible inputs for the lifestyle baseline. Controlled by
-// the parent so all state stays in one place; emits changes via onChange.
-import type { ChangeEvent } from "react";
-
+// CalculatorForm — the lifestyle baseline inputs. Composes reusable NumberField
+// primitives plus two selects; fully controlled by the parent so all state lives
+// in one place. Accessible by construction (labelled section + labelled fields).
+import { NumberField } from "./NumberField";
 import type { CarbonInput, Diet, TransportMode } from "../lib/types";
 
 interface Props {
@@ -14,17 +14,18 @@ const FUELS: TransportMode[] = ["car_petrol", "car_diesel", "car_ev", "bus", "ra
 const DIETS: Diet[] = ["meat_heavy", "meat_medium", "pescatarian", "vegetarian", "vegan"];
 
 export function CalculatorForm({ value, onChange, onSubmit }: Props) {
-  const num = (k: keyof CarbonInput) => (e: ChangeEvent<HTMLInputElement>) =>
-    onChange({ ...value, [k]: Number(e.target.value) });
+  // One helper builds the per-field setter, so every numeric field stays one line.
+  const set = (k: keyof CarbonInput) => (n: number) => onChange({ ...value, [k]: n });
 
   return (
     <section className="card" aria-labelledby="form-h">
       <h2 id="form-h">Your lifestyle baseline</h2>
       <div className="grid">
-        <label>
-          Car km / week
-          <input type="number" min={0} value={value.car_km_week} onChange={num("car_km_week")} />
-        </label>
+        <NumberField
+          label="Car km / week"
+          value={value.car_km_week}
+          onValueChange={set("car_km_week")}
+        />
         <label>
           Car fuel
           <select
@@ -38,19 +39,16 @@ export function CalculatorForm({ value, onChange, onSubmit }: Props) {
             ))}
           </select>
         </label>
-        <label>
-          Rail km / week
-          <input type="number" min={0} value={value.rail_km_week} onChange={num("rail_km_week")} />
-        </label>
-        <label>
-          Flight hours / year
-          <input
-            type="number"
-            min={0}
-            value={value.flight_hours_year}
-            onChange={num("flight_hours_year")}
-          />
-        </label>
+        <NumberField
+          label="Rail km / week"
+          value={value.rail_km_week}
+          onValueChange={set("rail_km_week")}
+        />
+        <NumberField
+          label="Flight hours / year"
+          value={value.flight_hours_year}
+          onValueChange={set("flight_hours_year")}
+        />
         <label>
           Diet
           <select
@@ -64,24 +62,16 @@ export function CalculatorForm({ value, onChange, onSubmit }: Props) {
             ))}
           </select>
         </label>
-        <label>
-          Electricity kWh / month
-          <input
-            type="number"
-            min={0}
-            value={value.electricity_kwh_month}
-            onChange={num("electricity_kwh_month")}
-          />
-        </label>
-        <label>
-          Shopping ₹ / month
-          <input
-            type="number"
-            min={0}
-            value={value.shopping_inr_month}
-            onChange={num("shopping_inr_month")}
-          />
-        </label>
+        <NumberField
+          label="Electricity kWh / month"
+          value={value.electricity_kwh_month}
+          onValueChange={set("electricity_kwh_month")}
+        />
+        <NumberField
+          label="Shopping ₹ / month"
+          value={value.shopping_inr_month}
+          onValueChange={set("shopping_inr_month")}
+        />
       </div>
       <p>
         <button type="button" onClick={onSubmit}>
