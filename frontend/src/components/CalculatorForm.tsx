@@ -1,3 +1,5 @@
+// CalculatorForm — accessible inputs for the lifestyle baseline. Controlled by
+// the parent so all state stays in one place; emits changes via onChange.
 import type { ChangeEvent } from "react";
 
 import type { CarbonInput, Diet, TransportMode } from "../lib/types";

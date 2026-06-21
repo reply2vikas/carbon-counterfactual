@@ -1,20 +1,25 @@
 # Architecture
 
-```
-┌──────────── Frontend (React + TS, Vite) ───────────┐
-│ CalculatorForm → ResultPanel → ActionList → Sim     │
-│ lib/api.ts (typed fetch client)                     │
-└───────────────────────┬─────────────────────────────┘
-                        │ JSON over HTTP (same-origin in prod)
-┌───────────────────────▼───────────── Backend (FastAPI) ┐
-│ routes/      thin HTTP layer (+ CORS, security headers) │
-│ carbon/      pure calculator + factor tables            │
-│ actions/     catalog · marginal-abatement ranker · sim  │
-│ insights/    Gemini client → rule-based fallback        │
-│ repository/  Protocol; in-memory (dev) / Firestore (prod)│
-└──────────────────────────────────────────────────────────┘
-        deployed as ONE container on Cloud Run
-        (SPA served same-origin by FastAPI StaticFiles)
+```mermaid
+flowchart TD
+    subgraph Frontend["Frontend — React + TS (Vite)"]
+        F1[CalculatorForm] --> F2[ResultPanel]
+        F2 --> F3[ActionList]
+        F3 --> F4[SimulationPanel]
+        F5[lib/api.ts typed client]
+    end
+    Frontend -- JSON over HTTP, same-origin --> R
+    subgraph Backend["Backend — FastAPI"]
+        R[routes/ thin HTTP + CORS + security headers]
+        R --> C[carbon/ pure calculator + factor tables]
+        R --> A[actions/ catalog - marginal-abatement ranker - simulator]
+        R --> I[insights/ Gemini client]
+        I -. fallback .-> RU[insights/ rule-based]
+        R --> RE[repository/ Protocol]
+        RE --> MEM[in-memory dev]
+        RE --> FS[Firestore prod]
+    end
+    Backend -- one container --> CR[(Google Cloud Run)]
 ```
 
 **Design rules.** Dependencies point inward; the domain core is pure and side-effect

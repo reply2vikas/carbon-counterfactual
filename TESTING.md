@@ -1,7 +1,7 @@
 # Testing
 
 ## Backend — measured
-- **42 tests**, **98% line coverage**, gate enforced at `--cov-fail-under=90`
+- **45 tests**, **100% line coverage**, gate enforced at `--cov-fail-under=90`
   (`backend/pyproject.toml`).
 - Layers covered: calculator, action catalogue, marginal-abatement ranker, what-if
   simulator (including the category-capping edge case so stacked actions can't
@@ -9,7 +9,7 @@
   full HTTP API via `TestClient`.
 
 ```
-pytest -> 42 passed, TOTAL coverage 98%
+pytest -> 45 passed, TOTAL coverage 100%
 ```
 
 | Layer | File |

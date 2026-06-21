@@ -1,3 +1,5 @@
+// SimulationPanel — the projected future: central estimate plus the low/high
+// sensitivity band, money impact, and whether the Paris target is met.
 import { inr, kg } from "../lib/format";
 import type { SimulationResult } from "../lib/types";
 
@@ -8,6 +10,13 @@ export function SimulationPanel({ sim }: { sim: SimulationResult }) {
       <p>
         Projected: <strong>{kg(sim.projected_total_kg)}</strong> /year — down {sim.reduction_pct}% (
         {kg(sim.reduction_kg)}).
+      </p>
+      <p>
+        Sensitivity range (±10%):{" "}
+        <strong>
+          {kg(sim.projected_low_kg)}&ndash;{kg(sim.projected_high_kg)}
+        </strong>{" "}
+        /year, reflecting adherence and factor uncertainty.
       </p>
       <p className={sim.meets_target ? "meets" : "miss"}>
         {sim.meets_target

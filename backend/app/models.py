@@ -78,6 +78,12 @@ class AppliedAction(BaseModel):
 class SimulationResult(BaseModel):
     baseline_total_kg: float
     projected_total_kg: float
+    # Sensitivity band around the central projection: real-world savings vary with
+    # behavioural adherence and factor uncertainty, so we report an optimistic
+    # (low) and conservative (high) bound at +/-10% of the achieved reduction,
+    # rather than a single false-precision number.
+    projected_low_kg: float
+    projected_high_kg: float
     reduction_kg: float
     reduction_pct: float
     meets_target: bool

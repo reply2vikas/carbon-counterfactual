@@ -8,7 +8,7 @@ from app.actions.ranker import rank_actions
 from app.carbon.calculator import compute_footprint
 from app.deps import get_repository
 from app.models import ActionView, CarbonInput, FootprintResult
-from app.repository.memory_repo import MemoryRepository
+from app.repository.base import EntryRepository
 
 router = APIRouter(prefix="/api", tags=["footprint"])
 
@@ -17,7 +17,7 @@ router = APIRouter(prefix="/api", tags=["footprint"])
 def calculate(
     payload: CarbonInput,
     x_device_id: str = Header(default="anonymous"),
-    repo: MemoryRepository = Depends(get_repository),
+    repo: EntryRepository = Depends(get_repository),
 ) -> FootprintResult:
     result = compute_footprint(payload)
     repo.save(x_device_id, result)
@@ -32,6 +32,6 @@ def actions(payload: CarbonInput) -> list[ActionView]:
 @router.get("/history", response_model=list[FootprintResult])
 def history(
     x_device_id: str = Header(default="anonymous"),
-    repo: MemoryRepository = Depends(get_repository),
+    repo: EntryRepository = Depends(get_repository),
 ) -> list[FootprintResult]:
     return repo.history(x_device_id)

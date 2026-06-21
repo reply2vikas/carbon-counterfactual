@@ -1,3 +1,5 @@
+// ActionList — the impact-ranked reduction actions as a checkbox set; toggling an
+// item drives the live simulation in the parent.
 import { inr, kg } from "../lib/format";
 import type { ActionView } from "../lib/types";
 

@@ -29,8 +29,17 @@ def _build_prompt(baseline: CarbonInput, simulation: SimulationResult | None) ->
 
 
 def generate(baseline: CarbonInput, simulation: SimulationResult | None) -> InsightResponse:
+    """Return a Gemini-authored insight, or the rule-based one on any failure.
+
+    Contract: this function never raises and never hard-fails. If no key is
+    configured we skip the network entirely; if the call errors or returns empty we
+    log and fall back to ``rules.generate``. The LLM only ever *narrates* numbers the
+    deterministic engine already computed — it is never the source of truth — which
+    is why a fallback is always safe.
+    """
     settings = get_settings()
     if not settings.gemini_api_key:
+        # No credentials -> don't even attempt the network; use the deterministic path.
         return rules.generate(baseline, simulation)
 
     try:  # pragma: no cover - network path, exercised only with real creds

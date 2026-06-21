@@ -34,6 +34,8 @@ beforeEach(() => {
         ? {
             baseline_total_kg: 5000,
             projected_total_kg: 4400,
+            projected_low_kg: 4340,
+            projected_high_kg: 4460,
             reduction_kg: 600,
             reduction_pct: 12,
             meets_target: false,

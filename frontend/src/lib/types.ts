@@ -1,3 +1,5 @@
+// Shared API types — the single source of truth mirroring the backend Pydantic
+// models, so the client and server agree on the contract at compile time.
 export type TransportMode = "car_petrol" | "car_diesel" | "car_ev" | "bus" | "rail" | "motorbike";
 export type Diet = "meat_heavy" | "meat_medium" | "pescatarian" | "vegetarian" | "vegan";
 export type Category = "transport" | "diet" | "home" | "consumption";
@@ -42,6 +44,8 @@ export interface ActionView {
 export interface SimulationResult {
   baseline_total_kg: number;
   projected_total_kg: number;
+  projected_low_kg: number;
+  projected_high_kg: number;
   reduction_kg: number;
   reduction_pct: number;
   meets_target: boolean;

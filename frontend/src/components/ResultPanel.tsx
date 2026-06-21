@@ -1,3 +1,5 @@
+// ResultPanel — shows the computed footprint and how it compares to the target.
+// aria-live so screen readers announce the result when it appears.
 import { kg } from "../lib/format";
 import type { FootprintResult } from "../lib/types";
 

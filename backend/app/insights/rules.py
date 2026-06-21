@@ -13,9 +13,18 @@ from app.models import CarbonInput, InsightResponse, SimulationResult
 
 
 def generate(baseline: CarbonInput, simulation: SimulationResult | None) -> InsightResponse:
+    """Build a personalised headline + up to four tips from the user's own numbers.
+
+    This is the deterministic fallback for ``gemini.generate``. It leads with the
+    user's single largest emission source (the highest-leverage thing to mention
+    first) and then surfaces the top-ranked actions. Keeping it deterministic means
+    the product degrades gracefully — identical, sensible advice — whenever the LLM
+    is unavailable, and it can be asserted exactly in tests.
+    """
     footprint = compute_footprint(baseline)
     bd = footprint.breakdown
     categories = {"transport": bd.transport, "diet": bd.diet, "home": bd.home, "consumption": bd.consumption}
+    # Lead with the biggest contributor — it is where the user has the most to gain.
     biggest = max(categories, key=lambda k: categories[k])
 
     over = footprint.total_kg - footprint.target_kg

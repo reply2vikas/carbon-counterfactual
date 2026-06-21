@@ -22,6 +22,16 @@ _CATEGORIES: tuple[Category, ...] = ("transport", "diet", "home", "consumption")
 
 
 def simulate(baseline: CarbonInput, action_ids: list[str], horizon_years: int) -> SimulationResult:
+    """Project the footprint that results from committing to a set of actions.
+
+    Two correctness rules drive the design:
+    1. Per-category capping — savings within a category can never exceed that
+       category's baseline, so stacking overlapping actions (e.g. three home-energy
+       fixes) can't drive a category negative or double-count.
+    2. A +/-10% sensitivity band on the achieved reduction, reported as low/high
+       bounds, because real-world adherence and factor uncertainty make a single
+       point estimate falsely precise.
+    """
     footprint = calc.compute_footprint(baseline)
     base_by_cat: dict[Category, float] = {
         "transport": footprint.breakdown.transport,
@@ -61,9 +71,15 @@ def simulate(baseline: CarbonInput, action_ids: list[str], horizon_years: int) -
     projected = max(0.0, footprint.total_kg - total_saved)
     reduction_pct = (total_saved / footprint.total_kg * 100.0) if footprint.total_kg else 0.0
 
+    # +/-10% sensitivity band on the achieved reduction (adherence + factor variance).
+    optimistic = max(0.0, footprint.total_kg - total_saved * (1 + f.ADHERENCE_BAND))
+    conservative = max(0.0, footprint.total_kg - total_saved * (1 - f.ADHERENCE_BAND))
+
     return SimulationResult(
         baseline_total_kg=round(footprint.total_kg, 1),
         projected_total_kg=round(projected, 1),
+        projected_low_kg=round(optimistic, 1),
+        projected_high_kg=round(conservative, 1),
         reduction_kg=round(total_saved, 1),
         reduction_pct=round(reduction_pct, 1),
         meets_target=projected <= f.PARIS_ALIGNED_TARGET_KG,

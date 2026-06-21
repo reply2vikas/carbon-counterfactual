@@ -45,3 +45,17 @@ def test_meets_target_for_light_profile(light_baseline: CarbonInput) -> None:
 def test_money_delta_accumulates(heavy_baseline: CarbonInput) -> None:
     res = simulate(heavy_baseline, ["led_lighting", "car_to_ev"], 1)
     assert res.money_delta_inr_year == -1500 + 25000
+
+
+def test_sensitivity_band_brackets_projection(heavy_baseline: CarbonInput) -> None:
+    res = simulate(heavy_baseline, ["diet_step", "led_lighting", "shift_car_to_rail"], 1)
+    # Optimistic (low) <= central <= conservative (high), all non-negative.
+    assert 0.0 <= res.projected_low_kg <= res.projected_total_kg <= res.projected_high_kg
+    # With actions applied the band must be non-degenerate.
+    assert res.projected_high_kg > res.projected_low_kg
+
+
+def test_sensitivity_band_collapses_with_no_actions(heavy_baseline: CarbonInput) -> None:
+    res = simulate(heavy_baseline, [], 1)
+    # No reduction -> no uncertainty -> band collapses onto the baseline.
+    assert res.projected_low_kg == res.projected_high_kg == res.projected_total_kg

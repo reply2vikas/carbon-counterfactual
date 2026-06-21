@@ -15,3 +15,5 @@
 
 No secrets are committed. The Gemini key is optional — absent it, the deterministic
 rules engine serves insights, so a leaked/empty key never breaks the product.
+
+See **[THREAT_MODEL.md](THREAT_MODEL.md)** for a STRIDE-style analysis.

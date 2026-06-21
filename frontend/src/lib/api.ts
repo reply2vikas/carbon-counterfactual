@@ -1,3 +1,10 @@
+/**
+ * Typed client for the FastAPI backend.
+ *
+ * VITE_API_BASE is empty by default, which means requests go to the same origin
+ * that served the SPA — the single-container production setup where FastAPI serves
+ * both the API and the built frontend, so no CORS round-trip is needed.
+ */
 import type { ActionView, CarbonInput, FootprintResult, SimulationResult } from "./types";
 
 const BASE = import.meta.env.VITE_API_BASE ?? "";
