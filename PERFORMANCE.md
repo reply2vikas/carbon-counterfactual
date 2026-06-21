@@ -1,5 +1,3 @@
-**Live URL:** https://carbon-counterfactual-279570839383.asia-south1.run.app
-
 # Performance / Efficiency
 
 ## Backend

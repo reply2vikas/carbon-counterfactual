@@ -45,15 +45,9 @@ export default function App() {
       <h1>Carbon Counterfactual</h1>
       <p className="tagline">Model your footprint, then simulate the future you could choose.</p>
       <CalculatorForm value={input} onChange={setInput} onSubmit={onCalculate} />
-      {error && (
-        <p role="alert" className="miss">
-          {error}
-        </p>
-      )}
+      {error && <p role="alert" className="miss">{error}</p>}
       {result && <ResultPanel result={result} />}
-      {actions.length > 0 && (
-        <ActionList actions={actions} selected={selected} onToggle={onToggle} />
-      )}
+      {actions.length > 0 && <ActionList actions={actions} selected={selected} onToggle={onToggle} />}
       {sim && <SimulationPanel sim={sim} />}
     </main>
   );

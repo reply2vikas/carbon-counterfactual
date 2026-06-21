@@ -7,7 +7,7 @@
 
 ![CI](https://img.shields.io/badge/CI-passing-2fb874) ![coverage](https://img.shields.io/badge/backend%20coverage-98%25-2fb874) ![types](https://img.shields.io/badge/mypy-strict-1f7a4d) ![a11y](https://img.shields.io/badge/WCAG-2.1%20AA-1f7a4d) ![license](https://img.shields.io/badge/license-MIT-green)
 
-**Live demo:** https://carbon-counterfactual-279570839383.asia-south1.run.app
+**Live demo:** _add your Cloud Run URL here before submitting._
 
 ## Why it's different
 

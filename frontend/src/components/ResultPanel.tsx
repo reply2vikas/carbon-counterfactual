@@ -6,9 +6,7 @@ export function ResultPanel({ result }: { result: FootprintResult }) {
   return (
     <section className="card" aria-labelledby="result-h" aria-live="polite">
       <h2 id="result-h">Your footprint</h2>
-      <p className="total">
-        {kg(result.total_kg)} <span style={{ fontSize: "1rem" }}>CO₂e / year</span>
-      </p>
+      <p className="total">{kg(result.total_kg)} <span style={{ fontSize: "1rem" }}>CO₂e / year</span></p>
       <p className={over ? "miss" : "meets"}>
         {over
           ? `${kg(result.total_kg - result.target_kg)} above the Paris-aligned target`
