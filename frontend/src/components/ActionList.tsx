@@ -16,11 +16,7 @@ export function ActionList({ actions, selected, onToggle }: Props) {
         {actions.map((a) => (
           <label key={a.id} className="action">
             <span>
-              <input
-                type="checkbox"
-                checked={selected.has(a.id)}
-                onChange={() => onToggle(a.id)}
-              />{" "}
+              <input type="checkbox" checked={selected.has(a.id)} onChange={() => onToggle(a.id)} />{" "}
               {a.label}
             </span>
             <span>
